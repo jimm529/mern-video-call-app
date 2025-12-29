@@ -11,4 +11,7 @@ frontend/.env
 # Logs
 npm-debug.log*
 work.txt
-
+node_modules
+.env
+.DS_Store
+outwork.txt
