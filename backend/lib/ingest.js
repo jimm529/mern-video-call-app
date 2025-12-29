@@ -35,11 +35,7 @@ const deleteUSerFromDB = inngest.createfuntion
         { id: "delete-user-from-db" },
         { event: "clerk/user.delete" },
         async ({ event }) => {
-
             await connectDB()
-
-
-
             const newUser = {
 
                 clearkId: id,
@@ -48,6 +44,7 @@ const deleteUSerFromDB = inngest.createfuntion
                 profileImage: image_url
             }
             const { id, email_addresses, first_name, last_name, image_url } = event.data
+            await User.deleteOne({clerkId:id});
 
         }
 

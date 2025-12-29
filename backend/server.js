@@ -1,30 +1,47 @@
 import dotenv from "dotenv";
-dotenv.config(); // MUST be first
+dotenv.config();
 
 import express from "express";
 import path from "path";
 import cors from "cors";
-import { ENV } from "./lib/env.js";
-import {serve} from "inngest/express"
+import { Inngest } from "inngest";
+import { serve } from "inngest/express";
 import { connectDB } from "./lib/db.js";
+import { ENV } from "./lib/env.js";
 
 const app = express();
 const __dirname = path.resolve();
 const PORT = process.env.PORT || 3000;
 
-// API ROUTES
+/* ================= MIDDLEWARE ================= */
+app.use(express.json());
+app.use(cors({ origin: ENV.CLIENT_URL, credentials: true }));
+
+/* ================= INNGEST ================= */
+const inngest = new Inngest({ name: "Books API" });
+
+const testFunction = inngest.createFunction(
+  { id: "test-function" },
+  { event: "test/event" },
+  async () => {
+    return { success: true };
+  }
+);
+
+app.use(
+  "/api/inngest",
+  serve({
+    client: inngest,
+    functions: [testFunction],
+  })
+);
+
+/* ================= ROUTES ================= */
 app.get("/api/health", (req, res) => {
-  res.status(200).json({ msg: "API is running" });
+  res.json({ msg: "API is running" });
 });
 
-
-app.use("/api/inngest",serve);
-app.get("/", (req, res) => {
-  res.status(200).json({ msg: "Books API working" });
-});
-app.use(express.json())
-app.use(cors({origin:ENV.CLIENT_URL,credentials:true}))
-// PRODUCTION MODE
+/* ================= PRODUCTION ================= */
 if (ENV.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
@@ -35,12 +52,12 @@ if (ENV.NODE_ENV === "production") {
   });
 }
 
-// START SERVER
+/* ================= START SERVER ================= */
 const startServer = async () => {
   try {
-    app.listen(PORT, async () => {
-      console.log(`Server running on port: ${PORT}`);
-      await connectDB(); // Connect to MongoDB
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error("Server failed to start:", error);
